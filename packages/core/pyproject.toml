@@ -5,6 +5,9 @@ description = "Score IR and shared contracts for Transcritor Musical"
 requires-python = ">=3.12,<3.13"
 dependencies = ["pydantic>=2.14,<3"]
 
+[project.scripts]
+transcritor-schema = "transcritor_core.schema:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

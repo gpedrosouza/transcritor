@@ -1,0 +1,955 @@
+{
+  "$defs": {
+    "AudioInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "duration_s": {
+          "exclusiveMinimum": 0,
+          "title": "Duration S",
+          "type": "number"
+        },
+        "sample_rate": {
+          "exclusiveMinimum": 0,
+          "title": "Sample Rate",
+          "type": "integer"
+        },
+        "channels": {
+          "minimum": 1,
+          "title": "Channels",
+          "type": "integer"
+        },
+        "original_name": {
+          "title": "Original Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha256",
+        "duration_s",
+        "sample_rate",
+        "channels",
+        "original_name"
+      ],
+      "title": "AudioInfo",
+      "type": "object"
+    },
+    "Decision": {
+      "additionalProperties": false,
+      "properties": {
+        "rule": {
+          "title": "Rule",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule",
+        "reason"
+      ],
+      "title": "Decision",
+      "type": "object"
+    },
+    "DocWarning": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/WarningCode"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/Location"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "location",
+        "message"
+      ],
+      "title": "DocWarning",
+      "type": "object"
+    },
+    "Hints": {
+      "additionalProperties": false,
+      "description": "User-provided hints; they take precedence over inference.",
+      "properties": {
+        "instruments": {
+          "items": {
+            "$ref": "#/$defs/InstrumentCount"
+          },
+          "title": "Instruments",
+          "type": "array"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeyHint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "meter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MeterHint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bpm": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bpm"
+        },
+        "pickup_beats": {
+          "anyOf": [
+            {
+              "pattern": "^-?\\d+(/\\d+)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pickup Beats"
+        },
+        "regions": {
+          "items": {
+            "$ref": "#/$defs/RegionHint"
+          },
+          "title": "Regions",
+          "type": "array"
+        }
+      },
+      "title": "Hints",
+      "type": "object"
+    },
+    "InstrumentCount": {
+      "additionalProperties": false,
+      "properties": {
+        "instrument": {
+          "title": "Instrument",
+          "type": "string"
+        },
+        "count": {
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "instrument",
+        "count"
+      ],
+      "title": "InstrumentCount",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "KeyHint": {
+      "additionalProperties": false,
+      "properties": {
+        "tonic_step": {
+          "enum": [
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "A",
+            "B"
+          ],
+          "title": "Tonic Step",
+          "type": "string"
+        },
+        "tonic_alter": {
+          "maximum": 2,
+          "minimum": -2,
+          "title": "Tonic Alter",
+          "type": "integer"
+        },
+        "mode": {
+          "enum": [
+            "major",
+            "minor"
+          ],
+          "title": "Mode",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tonic_step",
+        "tonic_alter",
+        "mode"
+      ],
+      "title": "KeyHint",
+      "type": "object"
+    },
+    "KeySegment": {
+      "additionalProperties": false,
+      "properties": {
+        "start_measure": {
+          "minimum": 0,
+          "title": "Start Measure",
+          "type": "integer"
+        },
+        "tonic_step": {
+          "enum": [
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "A",
+            "B"
+          ],
+          "title": "Tonic Step",
+          "type": "string"
+        },
+        "tonic_alter": {
+          "maximum": 2,
+          "minimum": -2,
+          "title": "Tonic Alter",
+          "type": "integer"
+        },
+        "mode": {
+          "enum": [
+            "major",
+            "minor"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "from_hint": {
+          "default": false,
+          "title": "From Hint",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "start_measure",
+        "tonic_step",
+        "tonic_alter",
+        "mode",
+        "confidence"
+      ],
+      "title": "KeySegment",
+      "type": "object"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "properties": {
+        "part_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part Id"
+        },
+        "note_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note Id"
+        },
+        "measure": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measure"
+        }
+      },
+      "title": "Location",
+      "type": "object"
+    },
+    "MeterHint": {
+      "additionalProperties": false,
+      "properties": {
+        "numerator": {
+          "minimum": 1,
+          "title": "Numerator",
+          "type": "integer"
+        },
+        "denominator": {
+          "enum": [
+            1,
+            2,
+            4,
+            8,
+            16,
+            32
+          ],
+          "title": "Denominator",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator"
+      ],
+      "title": "MeterHint",
+      "type": "object"
+    },
+    "MeterSegment": {
+      "additionalProperties": false,
+      "properties": {
+        "start_measure": {
+          "minimum": 0,
+          "title": "Start Measure",
+          "type": "integer"
+        },
+        "numerator": {
+          "minimum": 1,
+          "title": "Numerator",
+          "type": "integer"
+        },
+        "denominator": {
+          "enum": [
+            1,
+            2,
+            4,
+            8,
+            16,
+            32
+          ],
+          "title": "Denominator",
+          "type": "integer"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "from_hint": {
+          "default": false,
+          "title": "From Hint",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "start_measure",
+        "numerator",
+        "denominator",
+        "confidence"
+      ],
+      "title": "MeterSegment",
+      "type": "object"
+    },
+    "NotatedElement": {
+      "additionalProperties": false,
+      "description": "One written element of the score (notate layer).",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "note_ids": {
+          "description": "Listen-layer notes that originated this element.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Note Ids",
+          "type": "array"
+        },
+        "kind": {
+          "enum": [
+            "note",
+            "chord",
+            "rest",
+            "tie"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "part_id": {
+          "title": "Part Id",
+          "type": "string"
+        },
+        "staff": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Staff",
+          "type": "integer"
+        },
+        "voice": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Voice",
+          "type": "integer"
+        },
+        "measure": {
+          "description": "Measures are numbered from 1; the pickup (anacrusis) is measure 0.",
+          "minimum": 0,
+          "title": "Measure",
+          "type": "integer"
+        },
+        "beat": {
+          "description": "Offset from the start of the measure, in fractions of a whole note.",
+          "pattern": "^-?\\d+(/\\d+)?$",
+          "title": "Beat",
+          "type": "string"
+        },
+        "written_duration": {
+          "description": "Fraction of a whole note.",
+          "pattern": "^-?\\d+(/\\d+)?$",
+          "title": "Written Duration",
+          "type": "string"
+        },
+        "tuplet": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Tuplet"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "spelling": {
+          "items": {
+            "$ref": "#/$defs/Spelling"
+          },
+          "title": "Spelling",
+          "type": "array"
+        },
+        "accidental_shown": {
+          "default": false,
+          "title": "Accidental Shown",
+          "type": "boolean"
+        },
+        "decision": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Decision"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "note_ids",
+        "kind",
+        "part_id",
+        "measure",
+        "beat",
+        "written_duration"
+      ],
+      "title": "NotatedElement",
+      "type": "object"
+    },
+    "Notation": {
+      "additionalProperties": false,
+      "properties": {
+        "elements": {
+          "items": {
+            "$ref": "#/$defs/NotatedElement"
+          },
+          "title": "Elements",
+          "type": "array"
+        }
+      },
+      "title": "Notation",
+      "type": "object"
+    },
+    "Note": {
+      "additionalProperties": false,
+      "description": "A detected note (listen layer).",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "onset_s": {
+          "minimum": 0,
+          "title": "Onset S",
+          "type": "number"
+        },
+        "offset_s": {
+          "title": "Offset S",
+          "type": "number"
+        },
+        "pitch_hz": {
+          "exclusiveMinimum": 0,
+          "title": "Pitch Hz",
+          "type": "number"
+        },
+        "pitch_midi": {
+          "description": "May be fractional before rounding.",
+          "title": "Pitch Midi",
+          "type": "number"
+        },
+        "velocity": {
+          "anyOf": [
+            {
+              "maximum": 127,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Velocity"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "produced_by": {
+          "$ref": "#/$defs/ProducedBy"
+        }
+      },
+      "required": [
+        "id",
+        "onset_s",
+        "offset_s",
+        "pitch_hz",
+        "pitch_midi",
+        "confidence",
+        "produced_by"
+      ],
+      "title": "Note",
+      "type": "object"
+    },
+    "Part": {
+      "additionalProperties": false,
+      "description": "One instrument line. Sounding pitch = written pitch + transposition_semitones.",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "instrument": {
+          "title": "Instrument",
+          "type": "string"
+        },
+        "transposition_semitones": {
+          "title": "Transposition Semitones",
+          "type": "integer"
+        },
+        "range_midi": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Range Midi",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "$ref": "#/$defs/Note"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "instrument",
+        "transposition_semitones",
+        "range_midi"
+      ],
+      "title": "Part",
+      "type": "object"
+    },
+    "ProducedBy": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "title": "Adapter",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "adapter",
+        "version"
+      ],
+      "title": "ProducedBy",
+      "type": "object"
+    },
+    "ProvenanceEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "module_version": {
+          "title": "Module Version",
+          "type": "string"
+        },
+        "adapter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Adapter"
+        },
+        "params": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Params",
+          "type": "object"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        },
+        "duration_ms": {
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "number"
+        }
+      },
+      "required": [
+        "stage",
+        "module_version",
+        "started_at",
+        "duration_ms"
+      ],
+      "title": "ProvenanceEntry",
+      "type": "object"
+    },
+    "RegionHint": {
+      "additionalProperties": false,
+      "properties": {
+        "start_s": {
+          "title": "Start S",
+          "type": "number"
+        },
+        "end_s": {
+          "title": "End S",
+          "type": "number"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeyHint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "meter": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MeterHint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bpm": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bpm"
+        }
+      },
+      "required": [
+        "start_s",
+        "end_s"
+      ],
+      "title": "RegionHint",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "audio": {
+          "$ref": "#/$defs/AudioInfo"
+        },
+        "hints": {
+          "$ref": "#/$defs/Hints"
+        }
+      },
+      "required": [
+        "audio"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "Spelling": {
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "enum": [
+            "C",
+            "D",
+            "E",
+            "F",
+            "G",
+            "A",
+            "B"
+          ],
+          "title": "Step",
+          "type": "string"
+        },
+        "alter": {
+          "maximum": 2,
+          "minimum": -2,
+          "title": "Alter",
+          "type": "integer"
+        },
+        "octave": {
+          "title": "Octave",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "step",
+        "alter",
+        "octave"
+      ],
+      "title": "Spelling",
+      "type": "object"
+    },
+    "TempoPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "time_s": {
+          "minimum": 0,
+          "title": "Time S",
+          "type": "number"
+        },
+        "bpm": {
+          "exclusiveMinimum": 0,
+          "title": "Bpm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "time_s",
+        "bpm"
+      ],
+      "title": "TempoPoint",
+      "type": "object"
+    },
+    "Timeline": {
+      "additionalProperties": false,
+      "properties": {
+        "beats_s": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Beats S",
+          "type": "array"
+        },
+        "downbeats_s": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Downbeats S",
+          "type": "array"
+        },
+        "tempo_curve": {
+          "items": {
+            "$ref": "#/$defs/TempoPoint"
+          },
+          "title": "Tempo Curve",
+          "type": "array"
+        },
+        "meter_segments": {
+          "items": {
+            "$ref": "#/$defs/MeterSegment"
+          },
+          "title": "Meter Segments",
+          "type": "array"
+        }
+      },
+      "title": "Timeline",
+      "type": "object"
+    },
+    "Tonality": {
+      "additionalProperties": false,
+      "properties": {
+        "key_segments": {
+          "items": {
+            "$ref": "#/$defs/KeySegment"
+          },
+          "title": "Key Segments",
+          "type": "array"
+        }
+      },
+      "title": "Tonality",
+      "type": "object"
+    },
+    "Tuplet": {
+      "additionalProperties": false,
+      "properties": {
+        "actual": {
+          "minimum": 2,
+          "title": "Actual",
+          "type": "integer"
+        },
+        "normal": {
+          "minimum": 1,
+          "title": "Normal",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "actual",
+        "normal"
+      ],
+      "title": "Tuplet",
+      "type": "object"
+    },
+    "WarningCode": {
+      "enum": [
+        "LOW_CONFIDENCE_NOTE",
+        "OUT_OF_RANGE",
+        "AMBIGUOUS_METER",
+        "KEY_CHANGE_SUSPECTED",
+        "UNQUANTIZABLE_RHYTHM",
+        "SIMPLIFIED"
+      ],
+      "title": "WarningCode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/Source"
+    },
+    "parts": {
+      "items": {
+        "$ref": "#/$defs/Part"
+      },
+      "title": "Parts",
+      "type": "array"
+    },
+    "timeline": {
+      "$ref": "#/$defs/Timeline"
+    },
+    "tonality": {
+      "$ref": "#/$defs/Tonality"
+    },
+    "notation": {
+      "$ref": "#/$defs/Notation"
+    },
+    "warnings": {
+      "items": {
+        "$ref": "#/$defs/DocWarning"
+      },
+      "title": "Warnings",
+      "type": "array"
+    },
+    "provenance": {
+      "items": {
+        "$ref": "#/$defs/ProvenanceEntry"
+      },
+      "title": "Provenance",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "source"
+  ],
+  "title": "ScoreDoc",
+  "type": "object"
+}

@@ -7,68 +7,16 @@ from transcritor_core.models import (
     SCHEMA_VERSION,
     AudioInfo,
     Hints,
-    NotatedElement,
-    Note,
     Op,
     OpKind,
     Part,
-    ProducedBy,
     ScoreDoc,
-    Source,
-    Spelling,
 )
 
 NOW = datetime(2026, 10, 23, 12, 0, tzinfo=UTC)
 
 
-def make_source() -> Source:
-    return Source(
-        audio=AudioInfo(
-            sha256="a" * 64,
-            duration_s=10.0,
-            sample_rate=44100,
-            channels=1,
-            original_name="take.wav",
-        )
-    )
-
-
-def make_note(**overrides: object) -> Note:
-    data: dict[str, object] = {
-        "id": "n1",
-        "onset_s": 0.0,
-        "offset_s": 0.5,
-        "pitch_hz": 440.0,
-        "pitch_midi": 69.0,
-        "confidence": 0.9,
-        "produced_by": ProducedBy(adapter="stub", version="0"),
-    }
-    data.update(overrides)
-    return Note.model_validate(data)
-
-
-def make_element(**overrides: object) -> NotatedElement:
-    data: dict[str, object] = {
-        "id": "e1",
-        "note_ids": ["n1"],
-        "kind": "note",
-        "part_id": "p1",
-        "measure": 1,
-        "beat": "0",
-        "written_duration": "1/4",
-        "spelling": [Spelling(step="A", alter=0, octave=4)],
-    }
-    data.update(overrides)
-    return NotatedElement.model_validate(data)
-
-
-def make_doc() -> ScoreDoc:
-    part = Part.from_instrument("p1", "flute")
-    part.notes = [make_note(id="n1"), make_note(id="n2", onset_s=0.5, offset_s=1.0)]
-    return ScoreDoc.new(source=make_source()).model_copy(update={"parts": [part]})
-
-
-def test_new_doc_defaults() -> None:
+def test_new_doc_defaults(make_source) -> None:
     doc = ScoreDoc.new(source=make_source())
     assert doc.schema_version == SCHEMA_VERSION == "1.0.0"
     assert len(doc.id) == 32
@@ -76,7 +24,7 @@ def test_new_doc_defaults() -> None:
     assert doc.source.hints == Hints()
 
 
-def test_defaults_are_not_shared() -> None:
+def test_defaults_are_not_shared(make_source) -> None:
     a = ScoreDoc.new(source=make_source())
     b = ScoreDoc.new(source=make_source())
     a.timeline.beats_s.append(1.0)
@@ -94,7 +42,7 @@ def test_unknown_instrument_rejected() -> None:
         Part(id="p", instrument="kazoo", transposition_semitones=0, range_midi=(0, 1))
 
 
-def test_note_offset_after_onset() -> None:
+def test_note_offset_after_onset(make_note) -> None:
     with pytest.raises(ValidationError):
         make_note(onset_s=1.0, offset_s=1.0)
 
@@ -108,33 +56,33 @@ def test_note_offset_after_onset() -> None:
         {"confidence": 1.1},
     ],
 )
-def test_note_bounds(overrides: dict[str, object]) -> None:
+def test_note_bounds(overrides: dict[str, object], make_note) -> None:
     with pytest.raises(ValidationError):
         make_note(**overrides)
 
 
-def test_duplicate_note_ids_rejected() -> None:
+def test_duplicate_note_ids_rejected(make_note, make_doc) -> None:
     doc = make_doc()
     doc.parts[0].notes[1] = make_note(id="n1", onset_s=0.5, offset_s=1.0)
     with pytest.raises(ValidationError, match="n1"):
         ScoreDoc.model_validate(doc.model_dump(mode="json"))
 
 
-def test_element_with_unknown_note_id_rejected() -> None:
+def test_element_with_unknown_note_id_rejected(make_element, make_doc) -> None:
     data = make_doc().model_dump(mode="json")
     data["notation"]["elements"] = [make_element(note_ids=["ghost"]).model_dump(mode="json")]
     with pytest.raises(ValidationError, match="ghost"):
         ScoreDoc.model_validate(data)
 
 
-def test_element_with_unknown_part_rejected() -> None:
+def test_element_with_unknown_part_rejected(make_element, make_doc) -> None:
     data = make_doc().model_dump(mode="json")
     data["notation"]["elements"] = [make_element(part_id="nope").model_dump(mode="json")]
     with pytest.raises(ValidationError, match="nope"):
         ScoreDoc.model_validate(data)
 
 
-def test_valid_doc_roundtrip() -> None:
+def test_valid_doc_roundtrip(make_element, make_doc) -> None:
     doc = make_doc()
     data = make_doc().model_dump(mode="json")
     data["notation"]["elements"] = [make_element().model_dump(mode="json")]
@@ -145,7 +93,7 @@ def test_valid_doc_roundtrip() -> None:
     assert doc.parts[0].notes[0].id == "n1"
 
 
-def test_extra_field_rejected() -> None:
+def test_extra_field_rejected(make_doc) -> None:
     with pytest.raises(ValidationError):
         ScoreDoc.model_validate({**make_doc().model_dump(mode="json"), "foo": 1})
 
