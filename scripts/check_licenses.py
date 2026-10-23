@@ -3,13 +3,14 @@
 import json
 import subprocess
 import sys
+from pathlib import Path
 
-from transcritor_core.licenses import is_allowed
+from transcritor_core.licenses import evaluate, normalize_name, workspace_package_names
 
 # Package name -> reason, for packages verified by hand (needs an ADR).
 OVERRIDES: dict[str, str] = {}
 
-WORKSPACE_PREFIXES = ("transcritor-", "transcritor_")
+ROOT = Path(__file__).resolve().parent.parent
 
 
 def main() -> int:
@@ -20,18 +21,14 @@ def main() -> int:
         text=True,
     )
     packages: list[dict[str, str]] = json.loads(result.stdout)
-    rejected = 0
-    checked = 0
-    for pkg in packages:
-        name = pkg["Name"]
-        if name.lower().startswith(WORKSPACE_PREFIXES) or name in OVERRIDES:
-            continue
-        checked += 1
-        license_name = pkg["License"]
-        if not is_allowed(license_name):
-            rejected += 1
-            print(f"{name} {pkg['Version']}: {license_name}")
-    print(f"{checked} packages checked, {rejected} rejected")
+    skip = workspace_package_names(ROOT) | {normalize_name(n) for n in OVERRIDES}
+    checked, rejected = evaluate(packages, skip)
+    for line in rejected:
+        print(line)
+    if checked == 0:
+        print("error: no third-party packages were checked (wrong environment?)")
+        return 1
+    print(f"{checked} packages checked, {len(rejected)} rejected")
     return 1 if rejected else 0
 
 
