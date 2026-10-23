@@ -75,7 +75,7 @@ Operações nas camadas `timeline` ou `tonality` disparam reprocessamento de `no
 
 ## Erros e avisos
 
-- **Aviso** (`warnings[]`): incerteza ou anomalia que não impede o resultado. Exemplos: `LOW_CONFIDENCE_NOTE`, `OUT_OF_RANGE`, `AMBIGUOUS_METER`, `KEY_CHANGE_SUSPECTED`, `UNQUANTIZABLE_RHYTHM`.
+- **Aviso** (`warnings[]`): incerteza ou anomalia que não impede o resultado. Exemplos: `LOW_CONFIDENCE_NOTE`, `OUT_OF_RANGE`, `AMBIGUOUS_METER`, `KEY_CHANGE_SUSPECTED`, `UNQUANTIZABLE_RHYTHM`, `SIMPLIFIED` (simplificação de conteúdo feita pelo notate; ver `../modulos/notate.md`).
 - **Erro** (exceção tipada, job falha): áudio ilegível, formato não suportado, falha de ferramenta externa (ex.: MuseScore não gerou arquivo). Hierarquia em `core.errors`.
 
 ## Regras de compatibilidade

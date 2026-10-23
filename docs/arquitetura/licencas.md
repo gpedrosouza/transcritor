@@ -32,6 +32,7 @@ Pesos do MuScriptor, modelos do madmom, Essentia (AGPL) e seus modelos MTG, ADTO
 
 - Pesos do Beat This! (código MIT): confirmar antes da F1.
 - Pesos do BS-RoFormer SW e checkpoints do MVSep: confirmar antes da F5.
+- Banco de timbres para o gerador de áudio sintético (candidato: MuseScore_General): confirmar antes de usar no eval e, principalmente, antes de gerar dados de treino (F6).
 
 ## Verificação automática
 
