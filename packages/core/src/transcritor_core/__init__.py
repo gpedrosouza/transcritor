@@ -1,1 +1,83 @@
+"""Transcritor core: Score IR models, I/O, instruments and the Stage protocol."""
+
+from transcritor_core import instruments
+from transcritor_core.errors import SchemaVersionError, TranscritorError
+from transcritor_core.io import dump, load, migrate
+from transcritor_core.models import (
+    SCHEMA_VERSION,
+    AudioInfo,
+    Decision,
+    DocWarning,
+    Hints,
+    InstrumentCount,
+    KeyHint,
+    KeySegment,
+    Location,
+    MeterHint,
+    MeterSegment,
+    NotatedElement,
+    Notation,
+    Note,
+    Op,
+    OpKind,
+    Part,
+    ProducedBy,
+    ProvenanceEntry,
+    RegionHint,
+    ScoreDoc,
+    Source,
+    Spelling,
+    TempoPoint,
+    Timeline,
+    Tonality,
+    Tuplet,
+    WarningCode,
+)
+from transcritor_core.rational import MusicalFraction
+from transcritor_core.stage import Stage, run_stage
+from transcritor_core.units import hz_to_midi, midi_to_hz
+
 __version__ = "0.1.0"
+
+__all__ = [
+    "SCHEMA_VERSION",
+    "AudioInfo",
+    "Decision",
+    "DocWarning",
+    "Hints",
+    "InstrumentCount",
+    "KeyHint",
+    "KeySegment",
+    "Location",
+    "MeterHint",
+    "MeterSegment",
+    "MusicalFraction",
+    "NotatedElement",
+    "Notation",
+    "Note",
+    "Op",
+    "OpKind",
+    "Part",
+    "ProducedBy",
+    "ProvenanceEntry",
+    "RegionHint",
+    "SchemaVersionError",
+    "ScoreDoc",
+    "Source",
+    "Spelling",
+    "Stage",
+    "TempoPoint",
+    "Timeline",
+    "Tonality",
+    "TranscritorError",
+    "Tuplet",
+    "WarningCode",
+    "__version__",
+    "dump",
+    "hz_to_midi",
+    "instruments",
+    "load",
+    "midi_to_hz",
+    "migrate",
+    "run_stage",
+]
