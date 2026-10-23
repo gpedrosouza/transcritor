@@ -1,0 +1,32 @@
+[project]
+name = "transcritor"
+version = "0.1.0"
+description = "Orchestral audio to sheet music transcription workspace"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[dependency-groups]
+dev = ["ruff", "mypy", "pytest", "pip-licenses"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["docs", ".superpowers"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+packages = ["transcritor_core", "transcritor_eval"]
+
+[[tool.mypy.overrides]]
+module = ["music21.*", "mir_eval.*", "soundfile.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["packages"]
+addopts = ["--import-mode=importlib"]
