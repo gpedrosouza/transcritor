@@ -291,7 +291,7 @@ class OpKind(StrEnum):
 class Op(BaseModel):
     """An edit operation sent by the editor; ``from``/``to`` are the values before/after."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="forbid", populate_by_name=True, serialize_by_alias=True)
 
     id: str
     created_at: datetime

@@ -168,3 +168,19 @@ def test_op_uses_from_alias() -> None:
     )
     assert op.model_dump(mode="json", by_alias=True)["from"] == 66
     assert Op.model_validate(op.model_dump(mode="json", by_alias=True)) == op
+
+
+def test_op_serializes_by_alias_by_default() -> None:
+    op = Op(
+        id="o1",
+        created_at=NOW,
+        author="u",
+        layer="listen",
+        target_id=None,
+        op=OpKind.insert_note,
+        from_=None,
+        to={"pitch": 67},
+    )
+    dumped = op.model_dump(mode="json")
+    assert "from" in dumped and "from_" not in dumped
+    assert Op.model_validate_json(op.model_dump_json()) == op
