@@ -24,6 +24,13 @@ def read_downbeats(path: Path) -> list[float]:
     return times
 
 
+def _parse_score(score_path: Path) -> stream.Score:
+    score = converter.parse(str(score_path))
+    if not isinstance(score, stream.Score):
+        raise ValueError(f"{score_path} does not contain a single score")
+    return score
+
+
 def reference_notes_from_score(
     score_path: Path, downbeats_s: list[float], part_index: int = 0
 ) -> list[RefNote]:
@@ -31,10 +38,7 @@ def reference_notes_from_score(
 
     `downbeats_s` holds the start of each measure (pickup included) plus the end time of the last.
     """
-    score = converter.parse(str(score_path))
-    if not isinstance(score, stream.Score):
-        raise ValueError(f"{score_path} does not contain a single score")
-    part = score.parts[part_index].toSoundingPitch(inPlace=False)
+    part = _parse_score(score_path).parts[part_index].toSoundingPitch(inPlace=False)
     # Measure lengths come from the unstripped part: stripTies stretches a measure whose
     # last note is tied into the next one.
     measures = list(part.getElementsByClass(stream.Measure))
