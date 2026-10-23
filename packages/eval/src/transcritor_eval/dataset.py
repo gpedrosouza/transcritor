@@ -63,3 +63,9 @@ def read_reference_notes(path: Path) -> list[RefNote]:
             RefNote(float(row["onset_s"]), float(row["offset_s"]), int(row["pitch_midi"]))
             for row in csv.DictReader(fh)
         ]
+
+
+def write_reference_notes(notes: list[RefNote], path: Path) -> None:
+    rows = ["onset_s,offset_s,pitch_midi"]
+    rows += [f"{n.onset_s:.3f},{n.offset_s:.3f},{n.pitch_midi}" for n in notes]
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")

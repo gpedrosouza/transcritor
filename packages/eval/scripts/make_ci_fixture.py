@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 from music21 import clef, instrument, key, meter, note, stream, tempo
+from transcritor_eval.dataset import RefNote, write_reference_notes
 
 OUT = Path(__file__).resolve().parents[1] / "datasets" / "ci"
 ITEM_ID = "c_major_scale_flute"
@@ -65,10 +66,8 @@ def main() -> None:
     xml = re.sub(r'"P[0-9a-f]{32}"', '"P1"', xml)
     xml_path.write_text(xml, encoding="utf-8")
 
-    rows = ["onset_s,offset_s,pitch_midi"]
-    for i, pitch in enumerate(PITCHES):
-        rows.append(f"{i * NOTE_S:.3f},{(i + 1) * NOTE_S:.3f},{pitch}")
-    (OUT / "refs" / f"{ITEM_ID}.notes.csv").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    notes = [RefNote(i * NOTE_S, (i + 1) * NOTE_S, p) for i, p in enumerate(PITCHES)]
+    write_reference_notes(notes, OUT / "refs" / f"{ITEM_ID}.notes.csv")
 
     downbeats = "".join(f"{d:.1f}\n" for d in DOWNBEATS)
     (OUT / "refs" / f"{ITEM_ID}.downbeats.txt").write_text(downbeats, encoding="utf-8")
