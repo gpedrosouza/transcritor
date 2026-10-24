@@ -4,9 +4,10 @@ from bisect import bisect_right
 from fractions import Fraction
 from pathlib import Path
 
-from music21 import converter, stream
+from music21 import stream
 
 from transcritor_eval.dataset import RefNote, write_reference_notes
+from transcritor_eval.measures import indexed_measures, parse_score
 
 __all__ = ["read_downbeats", "reference_notes_from_score", "write_reference_notes"]
 
@@ -24,13 +25,6 @@ def read_downbeats(path: Path) -> list[float]:
     return times
 
 
-def _parse_score(score_path: Path) -> stream.Score:
-    score = converter.parse(str(score_path))
-    if not isinstance(score, stream.Score):
-        raise ValueError(f"{score_path} does not contain a single score")
-    return score
-
-
 def reference_notes_from_score(
     score_path: Path, downbeats_s: list[float], part_index: int = 0
 ) -> list[RefNote]:
@@ -38,10 +32,10 @@ def reference_notes_from_score(
 
     `downbeats_s` holds the start of each measure (pickup included) plus the end time of the last.
     """
-    part = _parse_score(score_path).parts[part_index].toSoundingPitch(inPlace=False)
+    part = parse_score(score_path).parts[part_index].toSoundingPitch(inPlace=False)
     # Measure lengths come from the unstripped part: stripTies stretches a measure whose
     # last note is tied into the next one.
-    measures = list(part.getElementsByClass(stream.Measure))
+    measures = indexed_measures(part)
     n = len(measures)
     if len(downbeats_s) != n + 1:
         raise ValueError(
@@ -50,10 +44,10 @@ def reference_notes_from_score(
 
     # Exact quarter-length arithmetic, so tuplets never overshoot a barline through rounding.
     starts = [Fraction(0)]
-    for measure in measures:
+    for index, measure in measures:
         length = Fraction(measure.duration.quarterLength)
         if length <= 0:
-            raise ValueError(f"measure {measure.number} is empty (zero duration)")
+            raise ValueError(f"measure {index} (by position) is empty (zero duration)")
         starts.append(starts[-1] + length)
 
     def time_at(q: Fraction) -> float:

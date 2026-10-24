@@ -8,6 +8,7 @@ from transcritor_core import Hints, InstrumentCount
 
 from transcritor_eval.align import read_downbeats
 from transcritor_eval.dataset import load_manifest, read_reference_notes, resolve_audio
+from transcritor_eval.measures import reference_downbeats
 from transcritor_eval.metrics_notation import NotationMetrics, notation_metrics
 from transcritor_eval.metrics_notes import NoteMetrics, note_metrics
 from transcritor_eval.pipelines import PIPELINES, Pipeline
@@ -53,7 +54,9 @@ def run_eval(
             doc = pipeline(audio, hints)
             notes: NoteMetrics = note_metrics(
                 read_reference_notes(base / item.reference_notes),
-                read_downbeats(base / item.reference_downbeats),
+                reference_downbeats(
+                    base / item.reference_score, read_downbeats(base / item.reference_downbeats)
+                ),
                 doc,
             )
             notation: NotationMetrics = notation_metrics(base / item.reference_score, item.key, doc)

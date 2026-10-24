@@ -25,8 +25,12 @@ class NoteMetrics(BaseModel):
 
 
 def downbeat_f1(reference_s: list[float], estimate_s: list[float]) -> float:
-    """F-measure (70 ms window); the last reference time is the end instant, not a downbeat."""
-    ref = np.asarray(reference_s[:-1], dtype=float)
+    """F-measure (70 ms window) of the estimated downbeats against the true reference ones.
+
+    ``reference_s`` must already be the true downbeats (see ``measures.reference_downbeats``):
+    nothing is dropped here.
+    """
+    ref = np.asarray(reference_s, dtype=float)
     est = np.asarray(estimate_s, dtype=float)
     if ref.size == 0 or est.size == 0:
         return 0.0

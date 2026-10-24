@@ -1,3 +1,4 @@
+import re
 from fractions import Fraction
 from pathlib import Path
 
@@ -290,6 +291,48 @@ def test_ci_score() -> None:
         key_score=1.0,
         meter_accuracy=1.0,
     )
+
+
+# --- positional measures (MusicXML numbers are ignored) ---
+
+
+def _renumber(path: Path, numbers: list[str], implicit_first: bool = False) -> Path:
+    """Copy a score, rewriting the MusicXML measure numbers in document order."""
+    remaining = iter(numbers)
+
+    def replace(match: re.Match[str]) -> str:
+        implicit = "yes" if implicit_first and match.start() == first else "no"
+        return f'<measure implicit="{implicit}" number="{next(remaining)}"'
+
+    text = path.read_text(encoding="utf-8")
+    pattern = re.compile(r'<measure implicit="(?:yes|no)" number="[^"]*"')
+    first = next(pattern.finditer(text)).start()
+    out = path.with_name(f"renumbered_{path.name}")
+    out.write_text(pattern.sub(replace, text), encoding="utf-8")
+    return out
+
+
+def test_excerpt_numbered_37_scores_like_1(score: Path) -> None:
+    excerpt = _renumber(score, ["37", "38"])
+    assert [r.measure for r in reference_elements(excerpt)] == [
+        r.measure for r in reference_elements(score)
+    ]
+    assert reference_meters(excerpt) == {1: (4, 4), 2: (4, 4)}
+    m = notation_metrics(excerpt, C_MAJOR, doc_from_reference(score))
+    assert m == notation_metrics(score, C_MAJOR, doc_from_reference(score))
+    assert (m.position_recall, m.position_precision, m.meter_accuracy) == (1, 1, 1)
+
+
+def test_pickup_numbered_1_and_implicit_is_measure_0(score_with_pickup: Path) -> None:
+    exported = _renumber(score_with_pickup, ["1", "2", "3"], implicit_first=True)
+    assert [r.measure for r in reference_elements(exported)] == [0, 1, 1, 2]
+    assert reference_meters(exported) == {0: (3, 4), 1: (3, 4), 2: (2, 4)}
+
+
+def test_duplicate_measure_numbers_are_kept_apart(score_with_pickup: Path) -> None:
+    duplicated = _renumber(score_with_pickup, ["0", "1", "1"])
+    assert reference_meters(duplicated) == {0: (3, 4), 1: (3, 4), 2: (2, 4)}
+    assert [r.measure for r in reference_elements(duplicated)] == [0, 1, 1, 2]
 
 
 # --- matching and accuracies ---

@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import NamedTuple
 
 import mir_eval
-from music21 import chord, meter, note, stream, tie
+from music21 import chord, meter, note, tie
 from pydantic import BaseModel, ConfigDict
 from transcritor_core import KeyHint, KeySegment, NotatedElement, ScoreDoc, Spelling
 
-from transcritor_eval.align import _parse_score
+from transcritor_eval.measures import indexed_measures, parse_score
 
 __all__ = [
     "NotationMetrics",
@@ -72,14 +72,15 @@ def reference_elements(score_path: Path, part_index: int = 0) -> list[RefElement
 
     Mirrors the Score IR, where a tie's continuation is its own `kind: tie` element: ties are
     not merged, each segment keeps its own written duration, and segments that continue or end
-    a tie are excluded (as are rests and grace notes). `beat` is the music21 offset inside the
-    measure (a pickup's first note is at 0); `beat` and `written_duration` are whole-note
+    a tie are excluded (as are rests and grace notes). `measure` is the positional index
+    (pickup = 0, then 1..N; MusicXML numbers are ignored). `beat` is the music21 offset inside
+    the measure (a pickup's first note is at 0); `beat` and `written_duration` are whole-note
     fractions. Pitches are written, not sounding. `accidental_shown` is True iff some pitch's
     accidental has `displayStatus is True` as parsed.
     """
-    part = _parse_score(score_path).parts[part_index]
+    part = parse_score(score_path).parts[part_index]
     elements: list[RefElement] = []
-    for measure in part.getElementsByClass(stream.Measure):
+    for index, measure in indexed_measures(part):
         for element in measure.recurse().notes:
             if element.duration.isGrace or _is_tie_continuation(element):
                 continue
@@ -97,7 +98,7 @@ def reference_elements(score_path: Path, part_index: int = 0) -> list[RefElement
             )
             elements.append(
                 RefElement(
-                    measure=int(measure.number),
+                    measure=index,
                     beat=Fraction(element.getOffsetInHierarchy(measure)) / 4,
                     written_duration=Fraction(element.duration.quarterLength) / 4,
                     spelling=_sorted_spelling(spelling),
@@ -108,18 +109,18 @@ def reference_elements(score_path: Path, part_index: int = 0) -> list[RefElement
 
 
 def reference_meters(score_path: Path) -> dict[int, tuple[int, int]]:
-    """Time signature in force at each measure of the first part (pickup included).
+    """Time signature in force at each positional measure of the first part (pickup included).
 
     A pickup gets its notated time signature, not its actual (shorter) length.
     """
-    part = _parse_score(score_path).parts[0]
+    part = parse_score(score_path).parts[0]
     meters: dict[int, tuple[int, int]] = {}
-    for measure in part.getElementsByClass(stream.Measure):
+    for index, measure in indexed_measures(part):
         # measure.timeSignature first: getContextByClass can return the previous measure's one.
         ts = measure.timeSignature or measure.getContextByClass(meter.TimeSignature)
         if ts is None:
-            raise ValueError(f"measure {measure.number} of {score_path} has no time signature")
-        meters[int(measure.number)] = (int(ts.numerator), int(ts.denominator))
+            raise ValueError(f"measure {index} of {score_path} has no time signature")
+        meters[index] = (int(ts.numerator), int(ts.denominator))
     return meters
 
 

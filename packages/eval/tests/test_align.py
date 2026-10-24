@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from music21 import chord, instrument, meter, note, stream, tie
-from transcritor_eval import align
+from transcritor_eval import measures
 from transcritor_eval.align import (
     read_downbeats,
     reference_notes_from_score,
@@ -157,7 +157,7 @@ def test_empty_measure_is_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     first.append(note.Note(60, quarterLength=4.0))
     part = stream.Part()
     part.append([first, stream.Measure(number=2)])
-    monkeypatch.setattr(align.converter, "parse", lambda _path: stream.Score([part]))
+    monkeypatch.setattr(measures.converter, "parse", lambda _path: stream.Score([part]))
     with pytest.raises(ValueError, match=r"measure 2"):
         reference_notes_from_score(tmp_path / "unused.musicxml", [0.0, 2.0, 4.0])
 

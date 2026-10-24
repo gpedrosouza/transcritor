@@ -12,7 +12,7 @@ from transcritor_eval.dataset import RefNote
 from transcritor_eval.metrics_notes import NoteMetrics, downbeat_f1, note_metrics
 
 REF = [RefNote(0.0, 0.5, 60), RefNote(1.0, 1.5, 62), RefNote(2.0, 2.5, 64)]
-DB = [0.0, 2.0, 4.0]  # reference downbeats + final instant
+DB = [0.0, 2.0]  # true reference downbeats (see measures.reference_downbeats)
 
 
 def _source() -> Source:
@@ -64,8 +64,9 @@ def test_wrong_pitch_misses() -> None:
     assert note_metrics(REF, DB, doc_from_ref(REF, pitch_shift=1)).onset_f1 == 0.0
 
 
-def test_final_time_is_not_a_downbeat() -> None:
+def test_downbeat_f1_compares_the_given_reference() -> None:
     assert downbeat_f1(DB, [0.0, 2.0]) == 1.0
+    assert downbeat_f1(DB, [0.0, 2.0, 4.0]) < 1.0  # nothing is dropped from either side
 
 
 def test_empty_doc_is_zero() -> None:
