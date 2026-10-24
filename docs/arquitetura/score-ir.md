@@ -42,6 +42,13 @@ ScoreDoc
 └─ provenance[]: {stage, module_version, adapter, params, started_at, duration_ms}
 ```
 
+## Convenções de posição e serialização
+
+- `beat` = deslocamento desde o início do compasso, em fração de semibreve. Compassos numerados a partir de 1; a anacruse é o compasso 0. Dentro da anacruse, `beat` é o deslocamento desde o início do conteúdo da própria anacruse (a primeira nota fica em `beat` 0, sem alinhar ao fim de um compasso cheio).
+- Ligaduras são elementos separados: o elemento que inicia a ligadura carrega a própria duração escrita do segmento; as continuações são elementos `kind: "tie"`.
+- `Op` é serializado com `from` (alias) por padrão. O JSON Schema publicado na F0 cobre apenas o `ScoreDoc`; o schema de `Op` vem na F2.
+- `schema_version` deve ser `MAJOR.MINOR.PATCH`. Documentos de outro major, ou de minor/patch mais novo que o do `core`, são rejeitados com `SchemaVersionError`.
+
 ## Hints
 
 ```

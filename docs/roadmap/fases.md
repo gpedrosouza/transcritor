@@ -2,7 +2,7 @@
 
 Contém: ordem de entrega, escopo e critério de saída de cada fase. Cada fase é um subprojeto com spec (`../specs/`), plano (`../planos/`) e implementação próprios. Uma fase só termina quando atinge o critério de saída **medido no eval**.
 
-Estado atual: **F0 — não iniciada.**
+Estado atual: **F0 concluída; curadoria do mono-v1 em andamento.**
 
 | Fase | Nome | Porte | Módulos |
 |---|---|---|---|
@@ -19,6 +19,7 @@ O editor vem antes da API (ADR 0004) para obter cedo o feedback de acurácia dos
 ## F0 — Fundação
 - **Escopo:** repositório (uv workspace, layout de `../arquitetura/stack.md`), CI (lint, tipos, testes, licenças), `core` com Score IR completa e JSON Schema, `eval` com o conjunto monofônico inicial e métricas de notas e notação.
 - **Saída:** CI verde; `transcritor-eval` roda sobre um "transcritor nulo" e produz relatório; schema publicado.
+- **Verificação de saída:** concluída. Lint, tipos e testes verdes; checagem de licenças ok; `transcritor-eval` roda com o pipeline nulo e gera relatório; schema versionado em `packages/core/schema/scoredoc.schema.json`. Pendente apenas a curadoria do conjunto real `mono-v1` (ver `../modulos/eval.md`), onde a F1 mede a linha de base.
 
 ## F1 — Monofônico ponta a ponta
 - **Escopo:** pipeline completo pela CLI para um instrumento monofônico: `transcritor transcribe audio.wav --instrument flute [--key ... --meter ... --bpm ...]` → MusicXML + PDF.

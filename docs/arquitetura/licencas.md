@@ -9,6 +9,7 @@ O produto é comercial e roda como serviço (servidor + editor web).
 | Categoria | Situação |
 |---|---|
 | MIT, BSD, Apache-2.0, ISC | Permitido em qualquer lugar |
+| MPL-2.0 | Permitido para uso sem modificação |
 | LGPL | Permitido com ligação dinâmica (ex.: Verovio WASM carregado no editor) |
 | GPL-3.0 | Só no servidor, em processo separado, nunca distribuído ao usuário. Exige exceção registrada abaixo |
 | AGPL | Proibido |
@@ -36,6 +37,6 @@ Pesos do MuScriptor, modelos do madmom, Essentia (AGPL) e seus modelos MTG, ADTO
 
 ## Verificação automática
 
-- CI roda checagem de licenças das dependências Python e npm contra uma lista de permitidas.
+- CI roda `scripts/check_licenses.py` sobre as dependências Python contra a lista de permitidas. Ele ignora apenas os nomes exatos dos pacotes do workspace e falha se nenhum pacote for verificado. A checagem de npm chega com o editor (F2).
 - Cada adaptador declara `weights_license` no código; um teste falha se a licença não estiver na lista permitida.
 - Adicionar exceção exige ADR.
