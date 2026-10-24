@@ -5,10 +5,19 @@ See docs/arquitetura/score-ir.md. Breaking changes require a ``SCHEMA_VERSION`` 
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Final, Literal, Self
+from fractions import Fraction
+from typing import Annotated, Final, Literal, Self
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    JsonValue,
+    WithJsonSchema,
+    model_validator,
+)
 
 from transcritor_core import instruments
 from transcritor_core.rational import MusicalFraction
@@ -20,8 +29,36 @@ Mode = Literal["major", "minor"]
 Denominator = Literal[1, 2, 4, 8, 16, 32]
 
 
+def _positive(value: Fraction) -> Fraction:
+    if value <= 0:
+        raise ValueError("must be greater than 0")
+    return value
+
+
+def _non_negative(value: Fraction) -> Fraction:
+    if value < 0:
+        raise ValueError("must be greater than or equal to 0")
+    return value
+
+
+# The JSON Schema can only exclude the sign; zero is rejected at validation time.
+_UNSIGNED_FRACTION_SCHEMA = WithJsonSchema({"type": "string", "pattern": r"^\d+(/\d+)?$"})
+PositiveFraction = Annotated[MusicalFraction, AfterValidator(_positive), _UNSIGNED_FRACTION_SCHEMA]
+NonNegativeFraction = Annotated[
+    MusicalFraction, AfterValidator(_non_negative), _UNSIGNED_FRACTION_SCHEMA
+]
+
+
+def _check_unique(kind: str, ids: list[str]) -> None:
+    seen: set[str] = set()
+    for item_id in ids:
+        if item_id in seen:
+            raise ValueError(f"duplicate {kind} id {item_id!r}")
+        seen.add(item_id)
+
+
 class _Model(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
 class ProducedBy(_Model):
@@ -35,8 +72,10 @@ class Note(_Model):
     id: str
     onset_s: float = Field(ge=0)
     offset_s: float
-    pitch_hz: float = Field(gt=0)
-    pitch_midi: float = Field(description="May be fractional before rounding.")
+    pitch_hz: float = Field(gt=0, description="Sounding pitch.")
+    pitch_midi: float = Field(
+        description="Sounding pitch as a MIDI number; may be fractional before rounding."
+    )
     velocity: int | None = Field(default=None, ge=0, le=127)
     confidence: float = Field(ge=0, le=1)
     produced_by: ProducedBy
@@ -120,7 +159,13 @@ class Hints(_Model):
     key: KeyHint | None = None
     meter: MeterHint | None = None
     bpm: float | None = Field(default=None, gt=0)
-    pickup_beats: MusicalFraction | None = None
+    pickup_beats: PositiveFraction | None = Field(
+        default=None,
+        description=(
+            "Pickup (anacrusis) length in fractions of a whole note, the same unit as "
+            "NotatedElement.beat (e.g. '1/4' = one quarter note)."
+        ),
+    )
     regions: list[RegionHint] = Field(default_factory=list)
 
 
@@ -192,12 +237,14 @@ class NotatedElement(_Model):
     measure: int = Field(
         ge=0, description="Measures are numbered from 1; the pickup (anacrusis) is measure 0."
     )
-    beat: MusicalFraction = Field(
+    beat: NonNegativeFraction = Field(
         description="Offset from the start of the measure, in fractions of a whole note."
     )
-    written_duration: MusicalFraction = Field(description="Fraction of a whole note.")
+    written_duration: PositiveFraction = Field(description="Fraction of a whole note.")
     tuplet: Tuplet | None = None
-    spelling: list[Spelling] = Field(default_factory=list)
+    spelling: list[Spelling] = Field(
+        default_factory=list, description="Written (not sounding) pitch of each note."
+    )
     accidental_shown: bool = False
     decision: Decision | None = None
 
@@ -238,7 +285,7 @@ class ProvenanceEntry(_Model):
 
 
 class ScoreDoc(_Model):
-    schema_version: str = SCHEMA_VERSION
+    schema_version: str = Field(default=SCHEMA_VERSION, pattern=r"^\d+\.\d+\.\d+$")
     id: str
     source: Source
     parts: list[Part] = Field(default_factory=list)
@@ -255,13 +302,11 @@ class ScoreDoc(_Model):
 
     @model_validator(mode="after")
     def _references_are_consistent(self) -> Self:
-        note_ids: set[str] = set()
-        for part in self.parts:
-            for note in part.notes:
-                if note.id in note_ids:
-                    raise ValueError(f"duplicate note id {note.id!r}")
-                note_ids.add(note.id)
+        _check_unique("part", [p.id for p in self.parts])
+        _check_unique("note", [n.id for p in self.parts for n in p.notes])
+        _check_unique("element", [e.id for e in self.notation.elements])
         part_ids = {p.id for p in self.parts}
+        note_ids = {n.id for p in self.parts for n in p.notes}
         for el in self.notation.elements:
             if el.part_id not in part_ids:
                 raise ValueError(f"element {el.id!r} references unknown part {el.part_id!r}")
@@ -291,7 +336,9 @@ class OpKind(StrEnum):
 class Op(BaseModel):
     """An edit operation sent by the editor; ``from``/``to`` are the values before/after."""
 
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, serialize_by_alias=True)
+    model_config = ConfigDict(
+        extra="forbid", allow_inf_nan=False, populate_by_name=True, serialize_by_alias=True
+    )
 
     id: str
     created_at: datetime

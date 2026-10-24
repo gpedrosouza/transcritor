@@ -11,6 +11,7 @@ from transcritor_core.models import (
     OpKind,
     Part,
     ScoreDoc,
+    Timeline,
 )
 
 NOW = datetime(2026, 10, 23, 12, 0, tzinfo=UTC)
@@ -132,3 +133,77 @@ def test_op_serializes_by_alias_by_default() -> None:
     dumped = op.model_dump(mode="json")
     assert "from" in dumped and "from_" not in dumped
     assert Op.model_validate_json(op.model_dump_json()) == op
+
+
+# --- contract invariants ---
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf")])
+def test_note_rejects_non_finite_times(bad: float, make_note) -> None:
+    with pytest.raises(ValidationError):
+        make_note(offset_s=bad)
+
+
+def test_timeline_rejects_nan() -> None:
+    with pytest.raises(ValidationError):
+        Timeline(downbeats_s=[0.0, float("nan")])
+
+
+def test_op_rejects_nan() -> None:
+    with pytest.raises(ValidationError):
+        Op(
+            id="o1",
+            created_at=NOW,
+            author="u",
+            layer="listen",
+            target_id="n1",
+            op=OpKind.set_pitch,
+            from_=66,
+            to=float("nan"),
+        )
+
+
+@pytest.mark.parametrize("duration", ["0", "-1/4"])
+def test_written_duration_must_be_positive(duration: str, make_element) -> None:
+    with pytest.raises(ValidationError, match="greater than 0"):
+        make_element(written_duration=duration)
+
+
+def test_beat_must_not_be_negative(make_element) -> None:
+    with pytest.raises(ValidationError, match="greater than or equal to 0"):
+        make_element(beat="-1/8")
+
+
+@pytest.mark.parametrize("pickup", ["0", "-1/4"])
+def test_pickup_beats_must_be_positive(pickup: str) -> None:
+    with pytest.raises(ValidationError, match="greater than 0"):
+        Hints(pickup_beats=pickup)
+
+
+def test_pickup_beats_accepts_whole_note_fraction() -> None:
+    assert Hints(pickup_beats="1/4").pickup_beats == Fraction(1, 4)
+
+
+def test_duplicate_part_ids_rejected(make_doc) -> None:
+    data = make_doc().model_dump(mode="json")
+    extra = Part.from_instrument("p1", "violin").model_dump(mode="json")
+    data["parts"].append(extra)
+    with pytest.raises(ValidationError, match="duplicate part id 'p1'"):
+        ScoreDoc.model_validate(data)
+
+
+def test_duplicate_element_ids_rejected(make_element, make_doc) -> None:
+    data = make_doc().model_dump(mode="json")
+    data["notation"]["elements"] = [
+        make_element(id="e1", note_ids=["n1"]).model_dump(mode="json"),
+        make_element(id="e1", note_ids=["n2"], beat="1/4").model_dump(mode="json"),
+    ]
+    with pytest.raises(ValidationError, match="duplicate element id 'e1'"):
+        ScoreDoc.model_validate(data)
+
+
+@pytest.mark.parametrize("version", ["1.0", "v1.0.0", "1.0.0-beta", ""])
+def test_schema_version_must_be_semver(version: str, make_doc) -> None:
+    data = {**make_doc().model_dump(mode="json"), "schema_version": version}
+    with pytest.raises(ValidationError):
+        ScoreDoc.model_validate(data)

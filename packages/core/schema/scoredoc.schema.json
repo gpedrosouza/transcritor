@@ -137,7 +137,7 @@
         "pickup_beats": {
           "anyOf": [
             {
-              "pattern": "^-?\\d+(/\\d+)?$",
+              "pattern": "^\\d+(/\\d+)?$",
               "type": "string"
             },
             {
@@ -145,6 +145,7 @@
             }
           ],
           "default": null,
+          "description": "Pickup (anacrusis) length in fractions of a whole note, the same unit as NotatedElement.beat (e.g. '1/4' = one quarter note).",
           "title": "Pickup Beats"
         },
         "regions": {
@@ -442,13 +443,13 @@
         },
         "beat": {
           "description": "Offset from the start of the measure, in fractions of a whole note.",
-          "pattern": "^-?\\d+(/\\d+)?$",
+          "pattern": "^\\d+(/\\d+)?$",
           "title": "Beat",
           "type": "string"
         },
         "written_duration": {
           "description": "Fraction of a whole note.",
-          "pattern": "^-?\\d+(/\\d+)?$",
+          "pattern": "^\\d+(/\\d+)?$",
           "title": "Written Duration",
           "type": "string"
         },
@@ -464,6 +465,7 @@
           "default": null
         },
         "spelling": {
+          "description": "Written (not sounding) pitch of each note.",
           "items": {
             "$ref": "#/$defs/Spelling"
           },
@@ -531,12 +533,13 @@
           "type": "number"
         },
         "pitch_hz": {
+          "description": "Sounding pitch.",
           "exclusiveMinimum": 0,
           "title": "Pitch Hz",
           "type": "number"
         },
         "pitch_midi": {
-          "description": "May be fractional before rounding.",
+          "description": "Sounding pitch as a MIDI number; may be fractional before rounding.",
           "title": "Pitch Midi",
           "type": "number"
         },
@@ -905,6 +908,7 @@
   "properties": {
     "schema_version": {
       "default": "1.0.0",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
       "title": "Schema Version",
       "type": "string"
     },
