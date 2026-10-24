@@ -2,7 +2,7 @@
 
 Transcrição de gravações de orquestra e música de câmara para partitura editável, com editor assistido e áudio sincronizado.
 
-Estado: F0 concluída (fundação: `core` com Score IR e `eval`); curadoria do conjunto mono-v1 em andamento.
+Estado: código da F0 concluído; saída da F0 pendente da curadoria do mono-v1 e da primeira execução verde no GitHub Actions (fundação: `core` com Score IR e `eval`).
 
 ## Começando
 
