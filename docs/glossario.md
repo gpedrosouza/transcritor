@@ -15,6 +15,8 @@ Contém: termos musicais e técnicos com o sentido usado neste projeto.
 
 ## Técnicos
 
+- **Contrato:** acordo sobre o formato dos dados trocados entre módulos (campos, tipos e significado). Quem produz garante o formato; quem consome depende só dele, sem conhecer a implementação do outro. No projeto, o contrato é a Score IR; mudanças nele são versionadas por `schema_version`.
+- **ADR (Architecture Decision Record):** registro curto de uma decisão de arquitetura, com contexto, decisão e consequências. Fica em `decisoes/`. Um ADR aceito não é editado; uma decisão nova gera outro ADR que indica qual substitui.
 - **ScoreDoc / Score IR:** documento interno que carrega tudo sobre uma transcrição. Ver `arquitetura/score-ir.md`.
 - **Camada listen:** o que foi ouvido (tempo em segundos, altura em Hz/MIDI).
 - **Camada notation:** como se escreve (compasso, tempo, duração escrita, grafia, voz, pauta).
