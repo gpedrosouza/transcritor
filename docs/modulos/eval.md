@@ -71,10 +71,10 @@ uv run transcritor-eval baseline --report eval-out/report.json \
     --out packages/eval/baselines/ci.json
 
 # derivar o CSV de notas de referência a partir do MusicXML + downbeats
-uv run transcritor-eval align ref.musicxml ref.downbeats.txt --out ref.notes.csv [--part ID]
+uv run transcritor-eval align ref.musicxml ref.downbeats.txt --out ref.notes.csv [--part N]
 ```
 
-`run` aceita `--data-root` (padrão para localizar `data/` do `audio_root: "data"`). A opção `--stage listen|rhythm|notate|all` fica para a F1; na F0 só existe `--pipeline null`.
+`align --part N` é o índice (base 0, padrão 0) da parte na partitura, não um id MusicXML como `P1`. `run --data-root` tem padrão `data/eval/audio`; em manifestos com `audio_root: "data"`, o campo `audio` do item é relativo a esse diretório (ex.: `"flauta_x.wav"` → `data/eval/audio/flauta_x.wav`). A opção `--stage listen|rhythm|notate|all` fica para a F1; na F0 só existe `--pipeline null`.
 
 ## Curadoria do conjunto mono-v1
 
