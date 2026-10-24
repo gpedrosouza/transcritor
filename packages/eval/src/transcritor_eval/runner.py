@@ -12,7 +12,7 @@ from transcritor_eval.measures import reference_downbeats
 from transcritor_eval.metrics_notation import NotationMetrics, notation_metrics
 from transcritor_eval.metrics_notes import NoteMetrics, note_metrics
 from transcritor_eval.pipelines import PIPELINES, Pipeline
-from transcritor_eval.report import EvalReport, ItemResult, item_metrics
+from transcritor_eval.report import EvalReport, HintsMode, ItemResult, item_metrics
 
 __all__ = ["EvalReport", "ItemResult", "run_eval"]
 
@@ -29,7 +29,13 @@ def run_eval(
     subset: Literal["ci", "full"],
     pipeline_name: str,
     data_root: Path = Path("data/eval/audio"),
+    hints: HintsMode = "instrument",
 ) -> EvalReport:
+    """Run ``pipeline_name`` on every item of ``subset`` and score it.
+
+    ``hints="instrument"`` (default) gives the pipeline only the item's instrument, so the
+    key is estimated, not handed over; ``hints="all"`` also passes the reference key.
+    """
     if pipeline_name not in PIPELINES:
         raise KeyError(f"unknown pipeline {pipeline_name!r}; valid: {sorted(PIPELINES)}")
     pipeline: Pipeline = PIPELINES[pipeline_name]
@@ -47,11 +53,12 @@ def run_eval(
                 ItemResult(item_id=item.id, status="skipped", message=f"audio not found: {audio}")
             )
             continue
-        hints = Hints(
-            instruments=[InstrumentCount(instrument=item.instrument, count=1)], key=item.key
+        item_hints = Hints(
+            instruments=[InstrumentCount(instrument=item.instrument, count=1)],
+            key=item.key if hints == "all" else None,
         )
         try:
-            doc = pipeline(audio, hints)
+            doc = pipeline(audio, item_hints)
             notes: NoteMetrics = note_metrics(
                 read_reference_notes(base / item.reference_notes),
                 reference_downbeats(
@@ -70,6 +77,7 @@ def run_eval(
         dataset=manifest.name,
         subset=subset,
         pipeline=pipeline_name,
+        hints=hints,
         created_at=datetime.now(UTC),
         items=results,
         means=_means(results),

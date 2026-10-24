@@ -30,6 +30,7 @@ def _report() -> EvalReport:
         dataset="d",
         subset="full",
         pipeline="null",
+        hints="instrument",
         created_at=datetime(2026, 10, 24, 12, 0, tzinfo=UTC),
         items=[
             ItemResult(item_id="a", status="ok", notes=notes, notation=notation),
@@ -48,6 +49,7 @@ def test_markdown_layout() -> None:
     lines = to_markdown(_report()).splitlines()
     text = "\n".join(lines)
     assert "d" in lines[0] and "full" in text and "null" in text and "2026-10-24" in text
+    assert "- Dicas: instrument" in lines
     assert "| item | status | notes.onset_f1 | notation.key_score |" in lines
     assert "| a | ok | 0.667 | 1.000 |" in lines
     assert f"| b | skipped | {D} | {D} |" in lines

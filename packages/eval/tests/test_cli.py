@@ -22,6 +22,7 @@ def write_report(path: Path, means: dict[str, float], statuses: tuple[str, ...] 
         dataset="d",
         subset="ci",
         pipeline="null",
+        hints="instrument",
         created_at=datetime(2026, 1, 1, tzinfo=UTC),
         items=items,
         means=means,
@@ -46,6 +47,14 @@ def test_cli_run_and_gate(tmp_path: Path, capsys: pytest.CaptureFixture[str]) ->
     assert "1 ok, 0 skipped, 0 error" in capsys.readouterr().out
     assert main(["gate", "--report", str(out / "report.json"), "--baseline", str(CI_BASELINE)]) == 0
     assert "OK: no regressions" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(("extra", "expected"), [([], "instrument"), (["--hints", "all"], "all")])
+def test_cli_run_records_hints_mode(tmp_path: Path, extra: list[str], expected: str) -> None:
+    args = ["run", "--manifest", str(CI_MANIFEST), "--subset", "ci", "--pipeline", "null"]
+    assert main([*args, "--out", str(tmp_path), *extra]) == 0
+    report = EvalReport.model_validate_json((tmp_path / "report.json").read_text("utf-8"))
+    assert report.hints == expected
 
 
 def test_gate_prints_regression(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

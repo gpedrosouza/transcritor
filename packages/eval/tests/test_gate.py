@@ -10,6 +10,7 @@ def report_with(means: dict[str, float]) -> EvalReport:
         dataset="d",
         subset="ci",
         pipeline="null",
+        hints="instrument",
         created_at=datetime(2026, 1, 1, tzinfo=UTC),
         items=[],
         means=means,

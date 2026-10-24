@@ -37,7 +37,7 @@ def _load_baseline(path: Path) -> dict[str, float]:
 
 
 def _cmd_run(args: argparse.Namespace) -> int:
-    report = run_eval(args.manifest, args.subset, args.pipeline, args.data_root)
+    report = run_eval(args.manifest, args.subset, args.pipeline, args.data_root, args.hints)
     out: Path = args.out
     out.mkdir(parents=True, exist_ok=True)
     to_json(report, out / "report.json")
@@ -104,6 +104,12 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--pipeline", choices=sorted(PIPELINES), required=True)
     run.add_argument("--data-root", type=Path, default=Path("data/eval/audio"))
     run.add_argument("--out", type=Path, required=True)
+    run.add_argument(
+        "--hints",
+        choices=["instrument", "all"],
+        default="instrument",
+        help="hints given to the pipeline: only the instrument (default) or also the key",
+    )
     run.set_defaults(func=_cmd_run)
 
     gate = sub.add_parser("gate", help="fail when a report regresses against a baseline")

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 import transcritor_eval.runner as runner_mod
-from transcritor_core import Hints, ScoreDoc
+from transcritor_core import Hints, KeyHint, ScoreDoc
 from transcritor_eval.metrics_notation import NotationMetrics
 from transcritor_eval.metrics_notes import NoteMetrics
 from transcritor_eval.pipelines import PIPELINES, null_pipeline
@@ -40,6 +40,32 @@ def test_null_pipeline_on_ci_set_runs_and_scores_zero() -> None:
     assert list(r.means) == MEAN_KEYS
     assert r.created_at.tzinfo is not None
     assert r.dataset == "ci" and r.subset == "ci" and r.pipeline == "null"
+
+
+def _recording_pipeline(monkeypatch: pytest.MonkeyPatch) -> list[Hints]:
+    received: list[Hints] = []
+
+    def recording(audio_path: Path, hints: Hints) -> ScoreDoc:
+        received.append(hints)
+        return null_pipeline(audio_path, hints)
+
+    monkeypatch.setitem(PIPELINES, "recording", recording)
+    return received
+
+
+def test_default_run_passes_only_the_instrument_hint(monkeypatch: pytest.MonkeyPatch) -> None:
+    received = _recording_pipeline(monkeypatch)
+    r = run_eval(CI_MANIFEST, "ci", "recording")
+    assert r.hints == "instrument"
+    assert [h.key for h in received] == [None]
+    assert [i.instrument for i in received[0].instruments] == ["flute"]
+
+
+def test_hints_all_passes_the_reference_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    received = _recording_pipeline(monkeypatch)
+    r = run_eval(CI_MANIFEST, "ci", "recording", hints="all")
+    assert r.hints == "all"
+    assert received[0].key == KeyHint(tonic_step="C", tonic_alter=0, mode="major")
 
 
 def test_null_pipeline_builds_document_with_provenance() -> None:

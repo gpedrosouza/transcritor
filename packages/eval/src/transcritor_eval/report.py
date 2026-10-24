@@ -9,6 +9,9 @@ from pydantic import BaseModel, ConfigDict
 from transcritor_eval.metrics_notation import NotationMetrics
 from transcritor_eval.metrics_notes import NoteMetrics
 
+HintsMode = Literal["instrument", "all"]
+"""Hints given to the pipeline: only the instrument, or every hint in the manifest (key too)."""
+
 
 class ItemResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -26,6 +29,7 @@ class EvalReport(BaseModel):
     dataset: str
     subset: str
     pipeline: str
+    hints: HintsMode
     created_at: datetime
     items: list[ItemResult]
     means: dict[str, float]  # keys like "notes.onset_f1"; mean over "ok" items only
@@ -60,6 +64,7 @@ def to_markdown(report: EvalReport) -> str:
         f"- Dataset: {report.dataset}",
         f"- Subconjunto: {report.subset}",
         f"- Pipeline: {report.pipeline}",
+        f"- Dicas: {report.hints}",
         f"- Data: {report.created_at.isoformat(timespec='seconds')}",
         "",
         _row(["item", "status", *keys]),
