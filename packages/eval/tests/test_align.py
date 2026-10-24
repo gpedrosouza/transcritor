@@ -204,3 +204,20 @@ def test_read_downbeats_requires_strictly_increasing(tmp_path: Path) -> None:
     path.write_text("0.0\n\n2.0\n2.0\n", encoding="utf-8")
     with pytest.raises(ValueError, match=r"line 4"):
         read_downbeats(path)
+
+
+def test_read_audacity_labels_skips_spectral_selection_lines(tmp_path: Path) -> None:
+    path = tmp_path / "labels.txt"
+    path.write_text(
+        "0.500000\t0.500000\t1\n\\\t100.000000\t2000.000000\n2.500000\t2.500000\t2\n",
+        encoding="utf-8",
+    )
+    assert read_downbeats(path) == [0.5, 2.5]
+
+
+@pytest.mark.parametrize("bad", ["abc", "nan", "inf"])
+def test_read_downbeats_reports_unparsable_line(tmp_path: Path, bad: str) -> None:
+    path = tmp_path / "downbeats.txt"
+    path.write_text(f"0.0\n1.5\n{bad}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match=rf"line 3.*'{bad}'"):
+        read_downbeats(path)

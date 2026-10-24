@@ -2,9 +2,9 @@
 
 import csv
 from pathlib import Path
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, Self
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from transcritor_core import KeyHint, instruments
 
 
@@ -45,6 +45,15 @@ class Manifest(BaseModel):
     name: str
     audio_root: Literal["manifest", "data"]
     items: list[Item]
+
+    @model_validator(mode="after")
+    def _unique_item_ids(self) -> Self:
+        seen: set[str] = set()
+        for item in self.items:
+            if item.id in seen:
+                raise ValueError(f"duplicate item id {item.id!r}")
+            seen.add(item.id)
+        return self
 
 
 def load_manifest(path: Path) -> Manifest:

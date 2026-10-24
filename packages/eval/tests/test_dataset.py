@@ -36,3 +36,12 @@ def test_manifest_rejects_unknown_instrument(tmp_path: Path) -> None:
 
 def test_mono_v1_manifest_is_valid() -> None:
     assert load_manifest(MONO_V1_MANIFEST).audio_root == "data"
+
+
+def test_manifest_rejects_duplicate_item_ids(tmp_path: Path) -> None:
+    raw = json.loads(CI_MANIFEST.read_text())
+    raw["items"].append(raw["items"][0])
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(raw))
+    with pytest.raises(ValidationError, match="duplicate item id 'c_major_scale_flute'"):
+        load_manifest(path)

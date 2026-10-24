@@ -1,5 +1,6 @@
 """Timed reference notes from a MusicXML score plus annotated measure downbeats."""
 
+import math
 from bisect import bisect_right
 from fractions import Fraction
 from pathlib import Path
@@ -13,12 +14,21 @@ __all__ = ["read_downbeats", "reference_notes_from_score", "write_reference_note
 
 
 def read_downbeats(path: Path) -> list[float]:
-    """Read one time per line, or Audacity labels (tab-separated, first column)."""
+    """Read one time per line, or Audacity labels (tab-separated, first column).
+
+    Blank lines and Audacity spectral-selection lines (starting with a backslash) are skipped.
+    """
     times: list[float] = []
     for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        if not line.strip():
+        if not line.strip() or line.startswith("\\"):
             continue
-        t = float(line.split("\t")[0])
+        field = line.split("\t")[0]
+        try:
+            t = float(field)
+        except ValueError:
+            t = math.nan
+        if not math.isfinite(t):
+            raise ValueError(f"{path} line {line_no}: not a time: {field!r}")
         if times and t <= times[-1]:
             raise ValueError(f"downbeats must be strictly increasing (line {line_no})")
         times.append(t)
