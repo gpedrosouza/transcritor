@@ -17,7 +17,14 @@ Define a Score IR (ver `../arquitetura/score-ir.md`) e o que todos os módulos c
 Qualquer processamento de áudio ou decisão de notação.
 
 ## Interface pública
-`ScoreDoc`, `Hints`, `Op`, `Stage`, `instruments.get(name)`, `errors`, `load(path)`, `dump(doc, path)`, `migrate(doc)`.
+Exportada em `transcritor_core.__all__`:
+- Modelos: `ScoreDoc`, `Source`, `AudioInfo`, `Hints` (`KeyHint`, `MeterHint`, `RegionHint`, `InstrumentCount`), `Part`, `Note`, `ProducedBy`, `Timeline` (`TempoPoint`, `MeterSegment`), `Tonality` (`KeySegment`), `Notation`, `NotatedElement`, `Spelling`, `Tuplet`, `Decision`, `DocWarning`, `WarningCode`, `Location`, `ProvenanceEntry`, `Op`, `OpKind`; constante `SCHEMA_VERSION`.
+- E/S: `load(path)`, `dump(doc, path)`, `migrate(doc)`.
+- Erros: `TranscritorError`, `SchemaVersionError`, `StageOutputError` (saída inválida de uma etapa, levantada por `run_stage`).
+- Estágios: `Stage`, `run_stage`.
+- Utilitários: `instruments` (`instruments.get(name)`), `MusicalFraction`, `hz_to_midi`, `midi_to_hz`, `__version__`.
+
+O JSON Schema do `ScoreDoc` fica em `packages/core/schema/scoredoc.schema.json` (o de `Op` vem na F2). Convenções de posição e versão: ver `../arquitetura/score-ir.md`.
 
 ## Dependências
 pydantic (MIT).

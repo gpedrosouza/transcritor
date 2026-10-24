@@ -1,0 +1,14 @@
+{
+  "notation.accidental_accuracy": 0.0,
+  "notation.duration_accuracy": 0.0,
+  "notation.key_score": 0.0,
+  "notation.meter_accuracy": 0.0,
+  "notation.position_precision": 0.0,
+  "notation.position_recall": 0.0,
+  "notation.spelling_accuracy": 0.0,
+  "notes.downbeat_f1": 0.0,
+  "notes.offset_f1": 0.0,
+  "notes.onset_f1": 0.0,
+  "notes.onset_precision": 0.0,
+  "notes.onset_recall": 0.0
+}

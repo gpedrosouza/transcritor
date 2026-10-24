@@ -44,11 +44,19 @@ transcritor/
 └─ .github/workflows/         # CI
 ```
 
-Nome de import Python: `transcritor_<modulo>` (ex.: `transcritor_notate`).
+Cada pacote Python segue `packages/<m>/src/transcritor_<m>/` (código) e `packages/<m>/tests/` (testes). Scripts de repositório em `scripts/` (ex.: `check_licenses.py`). Nome de import: `transcritor_<modulo>` (ex.: `transcritor_notate`).
+
+Eval: conjuntos em `packages/eval/datasets/<nome>/`, linhas de base em `packages/eval/baselines/<subset>.json`, áudio real em `data/eval/audio/` (fora do git). JSON Schema do ScoreDoc em `packages/core/schema/scoredoc.schema.json`.
 
 ## CI (a partir da F0)
 
-1. `ruff check`, `ruff format --check`, `mypy`.
-2. `pytest` (unitários e golden files).
-3. Checagem de licenças (ver `licencas.md`).
-4. Eval rápido sobre o subconjunto de CI, comparando com a linha de base (a partir da F1).
+Workflow `.github/workflows/ci.yml`, em cada push e PR:
+
+1. `uv sync --all-packages --locked` (instala exatamente o que está no lockfile).
+2. `ruff check`, `ruff format --check`, `mypy`.
+3. `pytest` (unitários e golden files).
+4. `python scripts/check_licenses.py` (ver `licencas.md`).
+5. `transcritor-eval run` sobre o subconjunto `ci` com o pipeline nulo.
+6. `transcritor-eval gate` comparando o relatório com `packages/eval/baselines/ci.json`.
+
+O workflow roda com permissão de leitura apenas (`permissions: contents: read`).
