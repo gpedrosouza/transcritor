@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 import mir_eval
-from music21 import meter, stream
+from music21 import chord, meter, note, stream, tie
 from pydantic import BaseModel, ConfigDict
 from transcritor_core import KeyHint, KeySegment, NotatedElement, ScoreDoc, Spelling
 
@@ -54,23 +54,34 @@ def _sorted_spelling(spelling: list[Spelling] | tuple[Spelling, ...]) -> tuple[S
     return tuple(sorted(spelling, key=_spelling_key))
 
 
-def reference_elements(score_path: Path, part_index: int = 0) -> list[RefElement]:
-    """Written notes and chords of a part (rests and grace notes skipped), tied notes merged.
+def _is_tie_continuation(element: note.NotRest) -> bool:
+    """True for a note (or chord whose every note) continues or ends a tie."""
 
-    `beat` is the music21 offset inside the measure (a pickup's first note is at 0) and
-    `written_duration` the tie-merged length, both in whole notes. Pitches are written, not
-    sounding. When the file leaves any accidental's display status undetermined, music21's
-    `makeAccidentals` (keeping explicit statuses) decides it before reading `displayStatus`.
+    def continues(t: tie.Tie | None) -> bool:
+        return t is not None and t.type in ("continue", "stop")
+
+    if continues(element.tie):
+        return True
+    if isinstance(element, chord.Chord):
+        return all(continues(n.tie) for n in element.notes)
+    return False
+
+
+def reference_elements(score_path: Path, part_index: int = 0) -> list[RefElement]:
+    """Written notes and chords of a part, one element per written tie segment.
+
+    Mirrors the Score IR, where a tie's continuation is its own `kind: tie` element: ties are
+    not merged, each segment keeps its own written duration, and segments that continue or end
+    a tie are excluded (as are rests and grace notes). `beat` is the music21 offset inside the
+    measure (a pickup's first note is at 0); `beat` and `written_duration` are whole-note
+    fractions. Pitches are written, not sounding. `accidental_shown` is True iff some pitch's
+    accidental has `displayStatus is True` as parsed.
     """
     part = _parse_score(score_path).parts[part_index]
-    pitches = [p for el in part.recurse().notes for p in el.pitches]
-    if any(p.accidental is not None and p.accidental.displayStatus is None for p in pitches):
-        part.makeAccidentals(inPlace=True, overrideStatus=False)  # type: ignore[no-untyped-call]
-
     elements: list[RefElement] = []
-    for measure in part.stripTies(inPlace=False).getElementsByClass(stream.Measure):
+    for measure in part.getElementsByClass(stream.Measure):
         for element in measure.recurse().notes:
-            if element.duration.isGrace:
+            if element.duration.isGrace or _is_tie_continuation(element):
                 continue
             spelling = [
                 Spelling(

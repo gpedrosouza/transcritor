@@ -234,10 +234,45 @@ def test_reference_pickup_ties_and_meters(score_with_pickup: Path) -> None:
     assert [(r.measure, r.beat, r.written_duration) for r in refs] == [
         (0, Fraction(0), Fraction(1, 4)),
         (1, Fraction(0), Fraction(1, 4)),
-        (1, Fraction(1, 4), Fraction(3, 4)),  # tied C5 counted once, full written length
-        (2, Fraction(1, 4), Fraction(1, 4)),
+        (1, Fraction(1, 4), Fraction(1, 2)),  # tie-start segment, its own written length
+        (2, Fraction(1, 4), Fraction(1, 4)),  # no element for the tie continuation at (2, 0)
     ]
     assert reference_meters(score_with_pickup) == {0: (3, 4), 1: (3, 4), 2: (2, 4)}
+
+
+def test_tied_note_written_as_tie_segments_scores_perfectly(score_with_pickup: Path) -> None:
+    doc = doc_from_reference(score_with_pickup)  # G4 | A4 C5(half, tie start) | D5
+    half = doc.notation.elements[2]
+    continuation = half.model_copy(
+        update={
+            "id": "t",
+            "kind": "tie",
+            "measure": 2,
+            "beat": Fraction(0),
+            "written_duration": Fraction(1, 4),
+        }
+    )
+    elements = [*doc.notation.elements[:3], continuation, doc.notation.elements[3]]
+    m = notation_metrics(score_with_pickup, None, _with_elements(doc, elements))
+    assert (m.position_precision, m.position_recall, m.duration_accuracy) == (1, 1, 1)
+
+
+def test_tied_chord_continuation_is_excluded(tmp_path: Path) -> None:
+    m1 = stream.Measure(number=1)
+    start = chord.Chord(["C4", "E4"], quarterLength=4)
+    for n in start.notes:
+        n.tie = tie.Tie("start")
+    m1.append([meter.TimeSignature("4/4"), start])
+    m2 = stream.Measure(number=2)
+    stop = chord.Chord(["C4", "E4"], quarterLength=2)
+    for n in stop.notes:
+        n.tie = tie.Tie("stop")
+    m2.append([stop, note.Note("G4", quarterLength=2)])
+    refs = reference_elements(_write(tmp_path, "chords.musicxml", [m1, m2]))
+    assert [(r.measure, r.beat, r.written_duration) for r in refs] == [
+        (1, Fraction(0), Fraction(1)),
+        (2, Fraction(1, 2), Fraction(1, 2)),
+    ]
 
 
 def test_ci_score() -> None:
