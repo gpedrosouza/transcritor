@@ -20,7 +20,7 @@ Qualquer processamento de áudio ou decisão de notação.
 Exportada em `transcritor_core.__all__`:
 - Modelos: `ScoreDoc`, `Source`, `AudioInfo`, `Hints` (`KeyHint`, `MeterHint`, `RegionHint`, `InstrumentCount`), `Part`, `Note`, `ProducedBy`, `Timeline` (`TempoPoint`, `MeterSegment`), `Tonality` (`KeySegment`), `Notation`, `NotatedElement`, `Spelling`, `Tuplet`, `Decision`, `DocWarning`, `WarningCode`, `Location`, `ProvenanceEntry`, `Op`, `OpKind`; constante `SCHEMA_VERSION`.
 - E/S: `load(path)`, `dump(doc, path)`, `migrate(doc)`.
-- Erros: `TranscritorError`, `SchemaVersionError`.
+- Erros: `TranscritorError`, `SchemaVersionError`, `StageOutputError` (saída inválida de uma etapa, levantada por `run_stage`).
 - Estágios: `Stage`, `run_stage`.
 - Utilitários: `instruments` (`instruments.get(name)`), `MusicalFraction`, `hz_to_midi`, `midi_to_hz`, `__version__`.
 

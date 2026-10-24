@@ -52,9 +52,11 @@ Eval: conjuntos em `packages/eval/datasets/<nome>/`, linhas de base em `packages
 
 Workflow `.github/workflows/ci.yml`, em cada push e PR:
 
-1. `uv sync --all-packages`.
+1. `uv sync --all-packages --locked` (instala exatamente o que está no lockfile).
 2. `ruff check`, `ruff format --check`, `mypy`.
 3. `pytest` (unitários e golden files).
 4. `python scripts/check_licenses.py` (ver `licencas.md`).
 5. `transcritor-eval run` sobre o subconjunto `ci` com o pipeline nulo.
 6. `transcritor-eval gate` comparando o relatório com `packages/eval/baselines/ci.json`.
+
+O workflow roda com permissão de leitura apenas (`permissions: contents: read`).
