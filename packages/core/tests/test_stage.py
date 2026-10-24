@@ -1,9 +1,10 @@
 from collections.abc import Callable, Mapping
 from datetime import UTC
 
+import pytest
 import transcritor_core
 from pydantic import JsonValue
-from transcritor_core import ScoreDoc, run_stage
+from transcritor_core import ScoreDoc, StageOutputError, TranscritorError, run_stage
 from transcritor_core.models import DocWarning, Location, WarningCode
 
 
@@ -38,6 +39,25 @@ class MutatingStage:
             )
         )
         return doc.model_copy(deep=True)
+
+
+class DuplicateNoteStage:
+    name = "duplicator"
+    version = "0.0.1"
+
+    def run(self, doc: ScoreDoc, config: Mapping[str, JsonValue]) -> ScoreDoc:
+        notes = doc.parts[0].notes
+        notes.append(notes[0].model_copy())  # list mutation bypasses validation
+        return doc
+
+
+def test_invalid_stage_output_raises_typed_error(make_doc: Callable[[], ScoreDoc]) -> None:
+    with pytest.raises(
+        StageOutputError, match=r"(?s)stage 'duplicator'.*duplicate note id 'n1'"
+    ) as e:
+        run_stage(DuplicateNoteStage(), make_doc(), {})
+    assert isinstance(e.value, TranscritorError)
+    assert e.value.stage == "duplicator"
 
 
 def test_provenance_appended_and_input_untouched(make_doc: Callable[[], ScoreDoc]) -> None:

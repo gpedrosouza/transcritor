@@ -5,8 +5,9 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Protocol
 
-from pydantic import JsonValue
+from pydantic import JsonValue, ValidationError
 
+from transcritor_core.errors import StageOutputError
 from transcritor_core.models import ProvenanceEntry, ScoreDoc
 
 
@@ -23,11 +24,21 @@ def run_stage(
     config: Mapping[str, JsonValue],
     adapter: str | None = None,
 ) -> ScoreDoc:
-    """Run ``stage`` on a deep copy of ``doc`` and append a provenance entry to the result."""
+    """Run ``stage`` on a deep copy of ``doc``, re-validate its output, append provenance.
+
+    In-place mutations (e.g. appending to a list) bypass Pydantic validation, so the result
+    is validated again; a contract violation raises ``StageOutputError``.
+    """
     started_at = datetime.now(UTC)
     t0 = time.perf_counter()
-    result = stage.run(doc.model_copy(deep=True), config)
+    output = stage.run(doc.model_copy(deep=True), config)
     duration_ms = (time.perf_counter() - t0) * 1000.0
+    try:
+        result = ScoreDoc.model_validate(output.model_dump(mode="python"))
+    except ValidationError as exc:
+        raise StageOutputError(
+            f"stage {stage.name!r} returned an invalid ScoreDoc: {exc}", stage=stage.name
+        ) from exc
     result.provenance.append(
         ProvenanceEntry(
             stage=stage.name,

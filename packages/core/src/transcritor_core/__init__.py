@@ -1,7 +1,7 @@
 """Transcritor core: Score IR models, I/O, instruments and the Stage protocol."""
 
 from transcritor_core import instruments
-from transcritor_core.errors import SchemaVersionError, TranscritorError
+from transcritor_core.errors import SchemaVersionError, StageOutputError, TranscritorError
 from transcritor_core.io import dump, load, migrate
 from transcritor_core.models import (
     SCHEMA_VERSION,
@@ -66,6 +66,7 @@ __all__ = [
     "Source",
     "Spelling",
     "Stage",
+    "StageOutputError",
     "TempoPoint",
     "Timeline",
     "Tonality",
