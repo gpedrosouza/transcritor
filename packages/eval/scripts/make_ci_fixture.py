@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import soundfile as sf
-from music21 import clef, instrument, key, meter, note, stream, tempo
+from music21 import clef, instrument, key, meter, note, pitch, stream, tempo
 from transcritor_eval.dataset import RefNote, write_reference_notes
 
 OUT = Path(__file__).resolve().parents[1] / "datasets" / "ci"
@@ -29,8 +29,8 @@ def make_audio() -> np.ndarray:
     envelope[:fade] = np.linspace(0.0, 1.0, fade)
     envelope[-fade:] = np.linspace(1.0, 0.0, fade)
     t = np.arange(n) / SAMPLE_RATE
-    for i, pitch in enumerate(PITCHES):
-        freq = 440.0 * 2.0 ** ((pitch - 69) / 12)
+    for i, midi in enumerate(PITCHES):
+        freq = 440.0 * 2.0 ** ((midi - 69) / 12)
         audio[i * n : (i + 1) * n] = AMPLITUDE * envelope * np.sin(2 * np.pi * freq * t)
     return audio
 
@@ -45,8 +45,11 @@ def make_score() -> stream.Score:
     part.append(key.KeySignature(0))
     part.append(meter.TimeSignature("4/4"))
     part.append(tempo.MetronomeMark(number=120))
-    for pitch in PITCHES:
-        part.append(note.Note(pitch, quarterLength=1.0))
+    for midi in PITCHES:
+        # Spell from the name: a Note built from a MIDI int makes music21 emit spurious
+        # <accidental>natural</accidental> tags after the first measure.
+        name = pitch.Pitch(midi=midi).nameWithOctave
+        part.append(note.Note(name, quarterLength=1.0))
     part.makeMeasures(inPlace=True)
     score = stream.Score()
     score.insert(0, part)
