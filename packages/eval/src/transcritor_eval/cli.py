@@ -22,6 +22,8 @@ def _load_baseline(path: Path) -> dict[str, float]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError(f"{path}: baseline must be a JSON object")
+    if not raw:
+        raise ValueError(f"{path}: baseline is empty")
     baseline: dict[str, float] = {}
     for key, value in raw.items():
         if (
@@ -48,6 +50,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
 
 
 def _cmd_gate(args: argparse.Namespace) -> int:
+    if not math.isfinite(args.tolerance) or args.tolerance < 0:
+        raise ValueError(f"--tolerance must be finite and >= 0, got {args.tolerance}")
     report = _load_report(args.report)
     baseline = _load_baseline(args.baseline)
     failed = False

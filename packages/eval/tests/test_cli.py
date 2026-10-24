@@ -94,7 +94,7 @@ def test_baseline_refuses_bad_items(tmp_path: Path, bad: str) -> None:
 
 def test_missing_and_bad_files_exit_2(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     base = tmp_path / "b.json"
-    base.write_text("{}", encoding="utf-8")
+    base.write_text('{"a": 0.5}', encoding="utf-8")
     assert main(["gate", "--report", str(tmp_path / "nope.json"), "--baseline", str(base)]) == 2
     assert capsys.readouterr().err
     bad = tmp_path / "bad.json"
@@ -132,3 +132,20 @@ def test_baseline_with_nan_exits_2(tmp_path: Path) -> None:
     base = tmp_path / "b.json"
     base.write_text('{"a": NaN}', encoding="utf-8")
     assert main(["gate", "--report", str(report), "--baseline", str(base)]) == 2
+
+
+def test_empty_baseline_exits_2(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    report = write_report(tmp_path / "r.json", {"a": 1.0})
+    base = tmp_path / "b.json"
+    base.write_text("{}", encoding="utf-8")
+    assert main(["gate", "--report", str(report), "--baseline", str(base)]) == 2
+    assert "empty" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("tol", ["nan", "inf", "-0.5"])
+def test_invalid_tolerance_exits_2(tmp_path: Path, tol: str) -> None:
+    report = write_report(tmp_path / "r.json", {"a": 0.0})
+    base = tmp_path / "b.json"
+    base.write_text('{"a": 0.9}', encoding="utf-8")
+    argv = ["gate", "--report", str(report), "--baseline", str(base), f"--tolerance={tol}"]
+    assert main(argv) == 2
