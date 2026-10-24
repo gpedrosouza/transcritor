@@ -6,7 +6,7 @@ See docs/arquitetura/score-ir.md. Breaking changes require a ``SCHEMA_VERSION`` 
 from datetime import datetime
 from enum import StrEnum
 from fractions import Fraction
-from typing import Annotated, Final, Literal, Self
+from typing import Annotated, Literal, Self
 from uuid import uuid4
 
 from pydantic import (
@@ -16,13 +16,14 @@ from pydantic import (
     Field,
     JsonValue,
     WithJsonSchema,
+    field_validator,
     model_validator,
 )
 
 from transcritor_core import instruments
 from transcritor_core.rational import MusicalFraction
-
-SCHEMA_VERSION: Final = "1.0.0"
+from transcritor_core.version import SCHEMA_VERSION as SCHEMA_VERSION
+from transcritor_core.version import check_supported_version
 
 Step = Literal["C", "D", "E", "F", "G", "A", "B"]
 Mode = Literal["major", "minor"]
@@ -294,6 +295,19 @@ class ScoreDoc(_Model):
     notation: Notation = Field(default_factory=Notation)
     warnings: list[DocWarning] = Field(default_factory=list)
     provenance: list[ProvenanceEntry] = Field(default_factory=list)
+
+    @field_validator("schema_version")
+    @classmethod
+    def _check_schema_version(cls, value: str) -> str:
+        """Reject versions that ``io.load`` could not read back.
+
+        Runs after the shape check (``pattern``), so malformed strings still raise
+        ``pydantic.ValidationError``. An unsupported but well-formed version raises
+        ``SchemaVersionError`` itself: it is not a ``ValueError``/``AssertionError``,
+        so Pydantic does not wrap it and it propagates unchanged, matching ``load``.
+        """
+        check_supported_version(value)
+        return value
 
     @classmethod
     def new(cls, source: Source) -> Self:

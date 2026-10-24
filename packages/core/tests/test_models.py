@@ -207,3 +207,20 @@ def test_schema_version_must_be_semver(version: str, make_doc) -> None:
     data = {**make_doc().model_dump(mode="json"), "schema_version": version}
     with pytest.raises(ValidationError):
         ScoreDoc.model_validate(data)
+
+
+@pytest.mark.parametrize("version", ["2.0.0", "1.1.0", "1.0.1", "0.9.0", "01.0.0"])
+def test_unsupported_schema_version_rejected_at_construction(version: str, make_doc) -> None:
+    from transcritor_core.errors import SchemaVersionError
+
+    data = {**make_doc().model_dump(mode="json"), "schema_version": version}
+    with pytest.raises(SchemaVersionError, match=r"supported: 1\.x up to 1\.0\.0") as exc:
+        ScoreDoc.model_validate(data)
+    assert exc.value.found == version
+    assert f"unsupported schema_version '{version}'" in str(exc.value)
+
+
+def test_current_schema_version_accepted_and_roundtrips(make_doc) -> None:
+    doc = ScoreDoc.model_validate({**make_doc().model_dump(mode="json"), "schema_version": "1.0.0"})
+    assert doc.schema_version == SCHEMA_VERSION
+    assert ScoreDoc.model_validate_json(doc.model_dump_json()) == doc
