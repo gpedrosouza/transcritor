@@ -16,3 +16,5 @@ jobs:
       - run: uv run mypy
       - run: uv run pytest
       - run: uv run python scripts/check_licenses.py
+      - run: uv run transcritor-eval run --manifest packages/eval/datasets/ci/manifest.json --subset ci --pipeline null --out eval-out
+      - run: uv run transcritor-eval gate --report eval-out/report.json --baseline packages/eval/baselines/ci.json
